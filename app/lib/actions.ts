@@ -15,7 +15,7 @@ const FormSchema = z.object({
   amount: z.coerce
     .number()
     .gt(0, { message: 'Please enter an amount greater than $0.' }),
-  status: z.enum(['pending', 'paid'], {
+  status: z.enum(['pending', 'paid', 'canceled'], {
     invalid_type_error: 'Please select an invoice status.',
   }),
   date: z.string(),
@@ -107,6 +107,7 @@ export async function updateInvoice(
   redirect('/dashboard/invoices');
 }
 
+/*
 export async function deleteInvoice(id: string) {
   // throw new Error('Failed to Delete Invoice');
 
@@ -117,6 +118,24 @@ export async function deleteInvoice(id: string) {
   } catch (error) {
     return { message: 'Database Error: Failed to Delete Invoice.' };
   }
+}
+*/
+
+export async function deleteInvoice(
+  id: string,
+) {
+  try {
+    await sql`
+      UPDATE invoices
+      SET status = 'canceled'
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    return { message: 'Database Error: Failed to set invoice status to canceled.' };
+  }
+
+  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
 }
 
 export async function authenticate(
