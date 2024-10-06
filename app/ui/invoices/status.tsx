@@ -12,8 +12,8 @@ const StatusDropDown = ({
   setIsStatusDropDownOpen
 }) => {
   // const updateInvoiceStatusWithId = updateInvoiceStatus.bind(invoiceId, status);
-  const handleUpdateStatus = async (possibleStatus) => {
-    await updateInvoiceStatus(invoiceId, possibleStatus)
+  const handleUpdateStatus = async (invoiceStatus) => {
+    await updateInvoiceStatus(invoiceId, invoiceStatus, 'change')
     setIsStatusDropDownOpen(false)
   }
 

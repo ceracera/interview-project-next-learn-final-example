@@ -22,6 +22,7 @@ export default function EditInvoiceForm({
   const initialState: State = { message: null, errors: {} };
   const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
   const [state, formAction] = useActionState(updateInvoiceWithId, initialState);
+  const prevStatus = invoice.status
 
   return (
     <form action={formAction}>
@@ -142,6 +143,11 @@ export default function EditInvoiceForm({
               ))}
           </div>
         </fieldset>
+        <input
+          type="hidden"
+          name="prevStatus"
+          value={prevStatus}
+        />
 
         <div aria-live="polite" aria-atomic="true">
           {state.message ? (

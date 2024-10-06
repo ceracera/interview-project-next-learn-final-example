@@ -6,6 +6,7 @@ import {
   InvoicesTable,
   LatestInvoiceRaw,
   Revenue,
+  InvoiceLog,
 } from './definitions';
 import { formatCurrency } from './utils';
 
@@ -280,3 +281,31 @@ export async function fetchFilteredCustomers(query: string) {
     throw new Error('Failed to fetch customer table.');
   }
 }
+
+export async function fetchInvoiceStatusLog(invoice_id: string) {
+  try {
+    const data = await sql<InvoiceLog>`
+      SELECT
+        invoice_status_log.id,
+        users.name AS username,
+        invoice_id,
+        date,
+        status,
+        action
+      FROM invoice_status_log
+      JOIN users
+        ON users.id = invoice_status_log.user_id
+      WHERE invoice_id = ${invoice_id};
+    `;
+
+    const invoiceLog = data.rows.map((invoiceLog) => ({
+      ...invoiceLog,
+    }));
+
+    return invoiceLog;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch invoice log.');
+  }
+}
+

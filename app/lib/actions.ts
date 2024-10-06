@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import { auth } from "@/auth"
 
 const FormSchema = z.object({
   id: z.string(),
@@ -19,11 +20,22 @@ const FormSchema = z.object({
     invalid_type_error: 'Please select an invoice status.',
   }),
   date: z.string(),
+  prevStatus: z.string().nullable(),
+});
+
+const InvoiceStatusSchema = z.object({
+  id: z.string(),
+  status: z.enum(['pending', 'paid', 'canceled'], {
+    invalid_type_error: 'Please select an invoice status.',
+  }),
+  action: z.enum(['change', 'restore']),
+  invoiceId: z.string(),
+  date: z.string(),
 });
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit({ date: true, id: true });
-const UpdateInvoiceStatus = FormSchema.omit({ date: true, id: true, customerId: true, amount: true });
+const UpdateInvoiceStatus = InvoiceStatusSchema.omit({ date: true, id: true });
 
 export type State = {
   errors?: {
@@ -76,9 +88,13 @@ export async function createInvoice(prevState: State, formData: FormData) {
 export async function updateInvoiceStatus(
   id: string,
   invoiceStatus: string,
+  statusAction: string,
 ) {
+  const session = await auth()
   const validatedFields = UpdateInvoiceStatus.safeParse({
+    invoiceId: id,
     status: invoiceStatus,
+    action: statusAction,
   });
 
   if (!validatedFields.success) {
@@ -88,20 +104,26 @@ export async function updateInvoiceStatus(
     };
   }
 
-  const { status } = validatedFields.data;
+  const { status, action, invoiceId } = validatedFields.data;
+
+  const logDate = new Date().toISOString().split('T')[0];
 
   try {
     await sql`
       UPDATE invoices
       SET status = ${invoiceStatus}
-      WHERE id = ${id}
+      WHERE id = ${invoiceId}
+    `;
+    await sql`
+      INSERT INTO invoice_status_log (user_id, invoice_id, date, status, action)
+      VALUES (${session.user.id}, ${invoiceId}, ${logDate}, ${status}, ${action})
     `;
   } catch (error) {
     console.log(error)
     return { message: 'Database Error: Failed to Update Invoice status.' };
   }
 
-  revalidatePath('/dashboard/invoices');
+  revalidatePath('/', 'layout');
   // redirect('/dashboard/invoices');
 }
 
@@ -110,10 +132,12 @@ export async function updateInvoice(
   prevState: State,
   formData: FormData,
 ) {
+  const session = await auth()
   const validatedFields = UpdateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
+    prevStatus: formData.get('prevStatus'),
   });
 
   if (!validatedFields.success) {
@@ -123,14 +147,20 @@ export async function updateInvoice(
     };
   }
 
-  const { customerId, amount, status } = validatedFields.data;
+  const { customerId, amount, status, prevStatus } = validatedFields.data;
   const amountInCents = amount * 100;
+
+  const logDate = new Date().toISOString().split('T')[0];
 
   try {
     await sql`
       UPDATE invoices
       SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
       WHERE id = ${id}
+    `;
+    prevStatus !== status && await sql`
+      INSERT INTO invoice_status_log (user_id, invoice_id, date, status, action)
+      VALUES (${session.user.id}, ${id}, ${logDate}, ${status}, 'change')
     `;
   } catch (error) {
     return { message: 'Database Error: Failed to Update Invoice.' };
@@ -157,13 +187,21 @@ export async function deleteInvoice(id: string) {
 export async function deleteInvoice(
   id: string,
 ) {
+  const session = await auth()
+  const logDate = new Date().toISOString().split('T')[0];
+
   try {
     await sql`
       UPDATE invoices
       SET status = 'canceled'
       WHERE id = ${id}
     `;
+    await sql`
+      INSERT INTO invoice_status_log (user_id, invoice_id, date, status, action)
+      VALUES (${session.user.id}, ${id}, ${logDate}, 'canceled', 'change')
+    `;
   } catch (error) {
+    console.log(error)
     return { message: 'Database Error: Failed to set invoice status to canceled.' };
   }
 
