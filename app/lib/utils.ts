@@ -1,17 +1,5 @@
 import { Revenue } from './definitions';
 
-declare global {
-  interface Date {
-    addDays(days: number): Date
-  }
-}
-
-Date.prototype.addDays = (days: number):Date => {
-  var date = new Date((this as any).valueOf());
-  date.setDate(date.getDate() + days);
-  return date;
-}
-
 export const formatCurrency = (amount: number) => {
   return (amount / 100).toLocaleString('en-US', {
     style: 'currency',

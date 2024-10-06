@@ -21,7 +21,9 @@ export default async function InvoicesTable({
   invoices.map(invoice => {
     if (
       invoice.status === 'pending'
-      && Number(invoice.date.addDays(14)) < Number(today)
+      && Number(
+        invoice.date.setDate(invoice.date.getDate() + 14)
+      ) < Number(today)
     ) {
       invoice.overdue = true
     }
