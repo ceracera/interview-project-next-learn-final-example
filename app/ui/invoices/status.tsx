@@ -55,7 +55,7 @@ export function InvoiceStatus({
   invoiceId: string
 }) {
   const [isStatusDropDownOpen, setIsStatusDropDownOpen] = useState(false)
-  const handleOpenStatusDropDown = () => {
+  const handleOpenStatusDropDown = (id, status) => {
     setIsStatusDropDownOpen(!isStatusDropDownOpen)
   }
 

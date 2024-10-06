@@ -1,7 +1,13 @@
 import { Revenue } from './definitions';
 
-Date.prototype.addDays = function(days) {
-  var date = new Date(this.valueOf());
+declare global {
+  interface Date {
+    addDays(days: number): Date
+  }
+}
+
+Date.prototype.addDays = (days: number):Date => {
+  var date = new Date((this as any).valueOf());
   date.setDate(date.getDate() + days);
   return date;
 }

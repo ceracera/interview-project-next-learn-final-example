@@ -116,7 +116,7 @@ export async function updateInvoiceStatus(
     `;
     await sql`
       INSERT INTO invoice_status_log (user_id, invoice_id, date, status, action)
-      VALUES (${session.user.id}, ${invoiceId}, ${logDate}, ${status}, ${action})
+      VALUES (${session?.user?.id}, ${invoiceId}, ${logDate}, ${status}, ${action})
     `;
   } catch (error) {
     console.log(error)
@@ -160,7 +160,7 @@ export async function updateInvoice(
     `;
     prevStatus !== status && await sql`
       INSERT INTO invoice_status_log (user_id, invoice_id, date, status, action)
-      VALUES (${session.user.id}, ${id}, ${logDate}, ${status}, 'change')
+      VALUES (${session?.user?.id}, ${id}, ${logDate}, ${status}, 'change')
     `;
   } catch (error) {
     return { message: 'Database Error: Failed to Update Invoice.' };
@@ -198,7 +198,7 @@ export async function deleteInvoice(
     `;
     await sql`
       INSERT INTO invoice_status_log (user_id, invoice_id, date, status, action)
-      VALUES (${session.user.id}, ${id}, ${logDate}, 'canceled', 'change')
+      VALUES (${session?.user?.id}, ${id}, ${logDate}, 'canceled', 'change')
     `;
   } catch (error) {
     console.log(error)

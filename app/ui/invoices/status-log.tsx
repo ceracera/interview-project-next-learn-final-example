@@ -3,6 +3,7 @@
 import { Button } from '@/app/ui/button';
 import clsx from 'clsx';
 import { updateInvoiceStatus } from '@/app/lib/actions';
+import { InvoiceLog } from '@/app/lib/definitions'
 
 export default function InvoiceStatusLog({ log }) {
   const handleUpdateStatus = async (invoiceId, status) => {
