@@ -87,30 +87,73 @@ const ITEMS_PER_PAGE = 6;
 export async function fetchFilteredInvoices(
   query: string,
   currentPage: number,
+  status: string,
 ) {
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
-    const invoices = await sql<InvoicesTable>`
-      SELECT
-        invoices.id,
-        invoices.amount,
-        invoices.date,
-        invoices.status,
-        customers.name,
-        customers.email,
-        customers.image_url
-      FROM invoices
-      JOIN customers ON invoices.customer_id = customers.id
-      WHERE
-        customers.name ILIKE ${`%${query}%`} OR
-        customers.email ILIKE ${`%${query}%`} OR
-        invoices.amount::text ILIKE ${`%${query}%`} OR
-        invoices.date::text ILIKE ${`%${query}%`} OR
-        invoices.status ILIKE ${`%${query}%`}
-      ORDER BY invoices.date DESC
-      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
-    `;
+    let invoices
+    if (status.length > 0 && query.length > 0) {
+      invoices = await sql<InvoicesTable>`
+        SELECT
+          invoices.id,
+          invoices.amount,
+          invoices.date,
+          invoices.status,
+          customers.name,
+          customers.email,
+          customers.image_url
+        FROM invoices
+        JOIN customers ON invoices.customer_id = customers.id
+        WHERE
+          invoices.status = ${status} AND (
+            customers.name ILIKE ${`%${query}%`} OR
+            customers.email ILIKE ${`%${query}%`} OR
+            invoices.amount::text ILIKE ${`%${query}%`} OR
+            invoices.date::text ILIKE ${`%${query}%`}
+          )
+        ORDER BY invoices.date DESC
+        LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+      `;
+    } else if (status.length > 0) {
+      invoices = await sql<InvoicesTable>`
+        SELECT
+          invoices.id,
+          invoices.amount,
+          invoices.date,
+          invoices.status,
+          customers.name,
+          customers.email,
+          customers.image_url
+        FROM invoices
+        JOIN customers ON invoices.customer_id = customers.id
+        WHERE
+          invoices.status = ${status}
+        ORDER BY invoices.date DESC
+        LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+      `;
+    } else {
+      invoices = await sql<InvoicesTable>`
+        SELECT
+          invoices.id,
+          invoices.amount,
+          invoices.date,
+          invoices.status,
+          customers.name,
+          customers.email,
+          customers.image_url
+        FROM invoices
+        JOIN customers ON invoices.customer_id = customers.id
+        WHERE
+          customers.name ILIKE ${`%${query}%`} OR
+          customers.email ILIKE ${`%${query}%`} OR
+          invoices.amount::text ILIKE ${`%${query}%`} OR
+          invoices.date::text ILIKE ${`%${query}%`} OR
+          invoices.status ILIKE ${`%${query}%`}
+        ORDER BY invoices.date DESC
+        LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+      `;
+    }
 
     return invoices.rows;
   } catch (error) {
@@ -119,18 +162,40 @@ export async function fetchFilteredInvoices(
   }
 }
 
-export async function fetchInvoicesPages(query: string) {
+export async function fetchInvoicesPages(query: string, status: string) {
   try {
-    const count = await sql`SELECT COUNT(*)
-    FROM invoices
-    JOIN customers ON invoices.customer_id = customers.id
-    WHERE
-      customers.name ILIKE ${`%${query}%`} OR
-      customers.email ILIKE ${`%${query}%`} OR
-      invoices.amount::text ILIKE ${`%${query}%`} OR
-      invoices.date::text ILIKE ${`%${query}%`} OR
-      invoices.status ILIKE ${`%${query}%`}
-  `;
+    let count
+    if (status.length > 0 && query.length > 0) {
+      count = await sql`SELECT COUNT(*)
+      FROM invoices
+      JOIN customers ON invoices.customer_id = customers.id
+      WHERE
+        invoices.status = ${status} AND (
+          customers.name ILIKE ${`%${query}%`} OR
+          customers.email ILIKE ${`%${query}%`} OR
+          invoices.amount::text ILIKE ${`%${query}%`} OR
+          invoices.date::text ILIKE ${`%${query}%`}
+        )
+      `;
+    } else if (status.length > 0) {
+      count = await sql`SELECT COUNT(*)
+      FROM invoices
+      JOIN customers ON invoices.customer_id = customers.id
+      WHERE
+        invoices.status = ${query}
+      `;
+    } else {
+      count = await sql`SELECT COUNT(*)
+      FROM invoices
+      JOIN customers ON invoices.customer_id = customers.id
+      WHERE
+        customers.name ILIKE ${`%${query}%`} OR
+        customers.email ILIKE ${`%${query}%`} OR
+        invoices.amount::text ILIKE ${`%${query}%`} OR
+        invoices.date::text ILIKE ${`%${query}%`} OR
+        invoices.status ILIKE ${`%${query}%`}
+      `;
+    }
 
     const totalPages = Math.ceil(Number(count.rows[0].count) / ITEMS_PER_PAGE);
     return totalPages;

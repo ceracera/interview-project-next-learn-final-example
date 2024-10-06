@@ -102,7 +102,7 @@ export async function updateInvoiceStatus(
   }
 
   revalidatePath('/dashboard/invoices');
-  redirect('/dashboard/invoices');
+  // redirect('/dashboard/invoices');
 }
 
 export async function updateInvoice(
@@ -168,7 +168,7 @@ export async function deleteInvoice(
   }
 
   revalidatePath('/dashboard/invoices');
-  redirect('/dashboard/invoices');
+  // redirect('/dashboard/invoices');
 }
 
 export async function authenticate(
