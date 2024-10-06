@@ -23,6 +23,7 @@ const FormSchema = z.object({
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit({ date: true, id: true });
+const UpdateInvoiceStatus = FormSchema.omit({ date: true, id: true, customerId: true, amount: true });
 
 export type State = {
   errors?: {
@@ -68,6 +69,38 @@ export async function createInvoice(prevState: State, formData: FormData) {
   }
 
   // Revalidate the cache for the invoices page and redirect the user.
+  revalidatePath('/dashboard/invoices');
+  redirect('/dashboard/invoices');
+}
+
+export async function updateInvoiceStatus(
+  id: string,
+  invoiceStatus: string,
+) {
+  const validatedFields = UpdateInvoiceStatus.safeParse({
+    status: invoiceStatus,
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Update Invoice status.',
+    };
+  }
+
+  const { status } = validatedFields.data;
+
+  try {
+    await sql`
+      UPDATE invoices
+      SET status = ${invoiceStatus}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    console.log(error)
+    return { message: 'Database Error: Failed to Update Invoice status.' };
+  }
+
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
 }

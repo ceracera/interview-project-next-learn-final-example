@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { UpdateInvoice, DeleteInvoice } from '@/app/ui/invoices/buttons';
-import InvoiceStatus from '@/app/ui/invoices/status';
+import { InvoiceStatus } from '@/app/ui/invoices/status';
 import { formatDateToLocal, formatCurrency } from '@/app/lib/utils';
 import { fetchFilteredInvoices } from '@/app/lib/data';
 
@@ -52,6 +52,7 @@ export default async function InvoicesTable({
                   <InvoiceStatus
                     status={invoice.status}
                     overdue={invoice.overdue}
+                    invoiceId={invoice.id}
                   />
                 </div>
                 <div className="flex w-full items-center justify-between pt-4">
@@ -123,6 +124,7 @@ export default async function InvoicesTable({
                     <InvoiceStatus
                       status={invoice.status}
                       overdue={invoice.overdue}
+                      invoiceId={invoice.id}
                     />
                   </td>
                   <td className="whitespace-nowrap py-3 pl-6 pr-3">
